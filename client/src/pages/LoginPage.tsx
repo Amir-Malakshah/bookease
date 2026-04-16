@@ -19,7 +19,7 @@ export default function LoginPage() {
     try {
       const data = await loginRequest(form)
       await login(data.token)
-      navigate('/dashboard')
+      navigate('/clients')
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Login failed')
     }
