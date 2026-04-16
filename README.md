@@ -20,3 +20,18 @@ BookEase is a full-stack appointment management platform for service-based busin
 - Appointment status tracking
 - Dashboard
 - Mock reminder integrations
+
+## Local Setup
+
+### Frontend
+```bash
+cd client
+npm install
+npm run dev
+```
+
+### Backend
+```bash
+cd server
+npm install
+npm run dev
