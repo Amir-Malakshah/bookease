@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import prisma from './lib/prisma.js'
+import authRoutes from './modules/auth/auth.routes.js'
 const app = express()
 
 app.use(
@@ -12,12 +13,24 @@ app.use(
 app.use(express.json())
 
 app.get('/api/health', async (_req, res) => {
-  await prisma.$queryRaw`SELECT 1`
+  try {
+    await prisma.$queryRaw`SELECT 1`
 
-  res.status(200).json({
-    message: 'BookEase API is running',
-    database: 'connected',
-  })
+    res.status(200).json({
+      message: 'BookEase API is running',
+      database: 'connected',
+    })
+  } catch (error) {
+    console.error('Health check DB error:', error)
+
+    res.status(500).json({
+      message: 'BookEase API is running',
+      database: 'not connected',
+    })
+  }
 })
+
+app.use('/api/auth', authRoutes)
+
 
 export default app
