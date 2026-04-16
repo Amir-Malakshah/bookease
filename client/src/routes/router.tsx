@@ -6,6 +6,9 @@ import ClientListPage from '../pages/ClientListPage'
 import CreateClientPage from '../pages/CreateClientPage'
 import ClientDetailPage from '../pages/ClientDetailPage'
 import ProtectedRoute from './ProtectedRoute'
+import ServiceListPage from '../pages/ServiceListPage'
+import CreateServicePage from '../pages/CreateServicePage'
+import ServiceDetailPage from '../pages/ServiceDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +52,30 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ClientDetailPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services',
+    element: (
+      <ProtectedRoute>
+        <ServiceListPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services/new',
+    element: (
+      <ProtectedRoute>
+        <CreateServicePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/services/:id',
+    element: (
+      <ProtectedRoute>
+        <ServiceDetailPage />
       </ProtectedRoute>
     ),
   },
