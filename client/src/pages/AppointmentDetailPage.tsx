@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { createAppointmentRequest } from '../features/appointments/appointment-api'
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  getAppointmentRequest,
+  updateAppointmentRequest,
+  type AppointmentStatus,
+} from '../features/appointments/appointment-api'
 import { http } from '../api/http'
 
 type Client = {
@@ -16,73 +20,97 @@ type Service = {
   price: number
 }
 
-export default function CreateAppointmentPage() {
+export default function AppointmentDetailPage() {
+  const { id } = useParams()
   const navigate = useNavigate()
 
   const [clients, setClients] = useState<Client[]>([])
   const [services, setServices] = useState<Service[]>([])
 
-  const [appointmentDate, setAppointmentDate] = useState('')
-  const [clientId, setClientId] = useState('')
-  const [serviceId, setServiceId] = useState('')
-  const [notes, setNotes] = useState('')
+  const [form, setForm] = useState({
+    appointmentDate: '',
+    status: 'SCHEDULED' as AppointmentStatus,
+    clientId: '',
+    serviceId: '',
+    notes: '',
+  })
 
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function loadData() {
+      if (!id) return
+
       try {
-        const [clientsRes, servicesRes] = await Promise.all([
+        const [appointment, clientsRes, servicesRes] = await Promise.all([
+          getAppointmentRequest(id),
           http.get('/clients'),
           http.get('/services'),
         ])
 
         setClients(clientsRes.data)
         setServices(servicesRes.data)
+
+        setForm({
+          appointmentDate: appointment.appointmentDate.slice(0, 16),
+          status: appointment.status,
+          clientId: appointment.clientId,
+          serviceId: appointment.serviceId,
+          notes: appointment.notes || '',
+        })
       } catch {
-        setError('Failed to load clients and services')
+        setError('Failed to load appointment')
+      } finally {
+        setLoading(false)
       }
     }
 
     loadData()
-  }, [])
-
-  const selectedService = services.find((service) => service.id === serviceId)
+  }, [id])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    if (!id) return
+
     setError('')
 
-    if (!appointmentDate || !clientId || !serviceId) {
+    if (!form.appointmentDate || !form.clientId || !form.serviceId) {
       setError('Appointment date, client, and service are required')
       return
     }
 
     try {
-      setLoading(true)
+      setSaving(true)
 
-      await createAppointmentRequest({
-        appointmentDate,
-        clientId,
-        serviceId,
-        notes,
+      await updateAppointmentRequest(id, {
+        appointmentDate: form.appointmentDate,
+        status: form.status,
+        clientId: form.clientId,
+        serviceId: form.serviceId,
+        notes: form.notes,
       })
 
       navigate('/appointments')
     } catch {
-      setError('Failed to create appointment')
+      setError('Failed to update appointment')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
+  }
+
+  if (loading) {
+    return <div className="max-w-4xl mx-auto p-6">Loading...</div>
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200/70 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Create Appointment</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Edit Appointment</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Schedule a booking by choosing a client, service, and date.
+          Update booking details, linked client, service, and status.
         </p>
       </div>
 
@@ -94,8 +122,10 @@ export default function CreateAppointmentPage() {
             </label>
             <input
               type="datetime-local"
-              value={appointmentDate}
-              onChange={(e) => setAppointmentDate(e.target.value)}
+              value={form.appointmentDate}
+              onChange={(e) =>
+                setForm({ ...form, appointmentDate: e.target.value })
+              }
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
             />
           </div>
@@ -106,8 +136,8 @@ export default function CreateAppointmentPage() {
                 Client
               </label>
               <select
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
+                value={form.clientId}
+                onChange={(e) => setForm({ ...form, clientId: e.target.value })}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white"
               >
                 <option value="">Select client</option>
@@ -124,8 +154,8 @@ export default function CreateAppointmentPage() {
                 Service
               </label>
               <select
-                value={serviceId}
-                onChange={(e) => setServiceId(e.target.value)}
+                value={form.serviceId}
+                onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white"
               >
                 <option value="">Select service</option>
@@ -138,32 +168,35 @@ export default function CreateAppointmentPage() {
             </div>
           </div>
 
-          {selectedService ? (
-            <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <p className="text-sm text-slate-600">
-                <span className="font-medium text-slate-800">Selected service:</span>{' '}
-                {selectedService.name}
-              </p>
-              <p className="text-sm text-slate-600 mt-1">
-                <span className="font-medium text-slate-800">Duration:</span>{' '}
-                {selectedService.durationMinutes} min
-              </p>
-              <p className="text-sm text-slate-600 mt-1">
-                <span className="font-medium text-slate-800">Price:</span>{' '}
-                ${selectedService.price}
-              </p>
-            </div>
-          ) : null}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Status
+            </label>
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status: e.target.value as AppointmentStatus,
+                })
+              }
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400 bg-white"
+            >
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Notes
             </label>
             <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
               className="w-full min-h-32 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400"
-              placeholder="Add appointment notes or special requests..."
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
           </div>
 
@@ -172,10 +205,10 @@ export default function CreateAppointmentPage() {
           <div className="flex gap-3">
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="inline-flex items-center rounded-2xl bg-slate-900 text-white px-5 py-3 text-sm font-medium shadow-sm hover:bg-slate-800 transition disabled:opacity-60"
             >
-              {loading ? 'Creating...' : 'Create Appointment'}
+              {saving ? 'Saving...' : 'Update Appointment'}
             </button>
 
             <button
@@ -183,7 +216,7 @@ export default function CreateAppointmentPage() {
               onClick={() => navigate('/appointments')}
               className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
             >
-              Cancel
+              Back
             </button>
           </div>
         </form>

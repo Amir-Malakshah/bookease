@@ -2,7 +2,9 @@ import type { Request, Response } from 'express'
 import { AppointmentStatus } from '@prisma/client'
 import {
   createAppointment,
+  getAppointmentById,
   getAppointments,
+  updateAppointment,
   updateAppointmentStatus,
 } from './appointments.service.js'
 
@@ -15,19 +17,19 @@ export async function createAppointmentHandler(req: Request, res: Response) {
       return res.status(401).json({ message: 'Unauthorized' })
     }
 
-    if (!appointmentDate|| !clientId || !serviceId) {
+    if (!appointmentDate || !clientId || !serviceId) {
       return res.status(400).json({
         message: 'appointmentDate, clientId, serviceId are required',
       })
     }
 
     const appointment = await createAppointment({
-        appointmentDate: new Date(appointmentDate),
-        clientId,
-        serviceId,
-        notes,
-        ownerId,
-      })
+      appointmentDate: new Date(appointmentDate),
+      clientId,
+      serviceId,
+      notes,
+      ownerId,
+    })
 
     return res.status(201).json(appointment)
   } catch {
@@ -50,6 +52,88 @@ export async function getAppointmentsHandler(req: Request, res: Response) {
   }
 }
 
+export async function getAppointmentByIdHandler(req: Request, res: Response) {
+  try {
+    const ownerId = req.user?.userId
+    const id = req.params.id
+
+    if (!ownerId) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ message: 'Invalid appointment id' })
+    }
+
+    const appointment = await getAppointmentById(id, ownerId)
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' })
+    }
+
+    return res.status(200).json(appointment)
+  } catch {
+    return res.status(500).json({ message: 'Failed to load appointment' })
+  }
+}
+
+export async function updateAppointmentHandler(req: Request, res: Response) {
+  try {
+    const ownerId = req.user?.userId
+    const id = req.params.id
+    const { appointmentDate, status, clientId, serviceId, notes } = req.body
+
+    if (!ownerId) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ message: 'Invalid appointment id' })
+    }
+
+    const updateData: {
+      appointmentDate?: Date
+      status?: AppointmentStatus
+      clientId?: string
+      serviceId?: string
+      notes?: string
+    } = {}
+
+    if (appointmentDate !== undefined) {
+      updateData.appointmentDate = new Date(appointmentDate)
+    }
+
+    if (status !== undefined) {
+      if (!Object.values(AppointmentStatus).includes(status as AppointmentStatus)) {
+        return res.status(400).json({ message: 'Invalid appointment status' })
+      }
+      updateData.status = status as AppointmentStatus
+    }
+
+    if (clientId !== undefined) {
+      updateData.clientId = clientId
+    }
+
+    if (serviceId !== undefined) {
+      updateData.serviceId = serviceId
+    }
+
+    if (notes !== undefined) {
+      updateData.notes = notes
+    }
+
+    const updated = await updateAppointment(id, ownerId, updateData)
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Appointment not found' })
+    }
+
+    return res.status(200).json(updated)
+  } catch {
+    return res.status(500).json({ message: 'Failed to update appointment' })
+  }
+}
+
 export async function updateStatusHandler(req: Request, res: Response) {
   try {
     const ownerId = req.user?.userId
@@ -61,17 +145,21 @@ export async function updateStatusHandler(req: Request, res: Response) {
     }
 
     if (!id || Array.isArray(id)) {
-        return res.status(400).json({ message: 'Invalid appointment id' })
+      return res.status(400).json({ message: 'Invalid appointment id' })
     }
 
     if (
-        !status ||
-        !Object.values(AppointmentStatus).includes(status as AppointmentStatus)
-      ) {
-        return res.status(400).json({ message: 'Invalid appointment status' })
-      }
+      !status ||
+      !Object.values(AppointmentStatus).includes(status as AppointmentStatus)
+    ) {
+      return res.status(400).json({ message: 'Invalid appointment status' })
+    }
 
-    const updated = await updateAppointmentStatus(id, ownerId, status as AppointmentStatus)
+    const updated = await updateAppointmentStatus(
+      id,
+      ownerId,
+      status as AppointmentStatus
+    )
 
     if (!updated) {
       return res.status(404).json({ message: 'Appointment not found' })

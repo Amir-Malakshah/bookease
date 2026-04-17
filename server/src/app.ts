@@ -5,6 +5,7 @@ import authRoutes from './modules/auth/auth.routes.js'
 import clientRoutes from './modules/clients/clients.routes.js'
 import serviceRoutes from './modules/services/services.routes.js'
 import appointmentRoutes from './modules/appointments/appointments.routes.js'
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js'
 const app = express()
 
 app.use(
@@ -37,5 +38,6 @@ app.use('/api/auth', authRoutes)
 app.use('/api/clients', clientRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/appointments', appointmentRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 
 export default app
