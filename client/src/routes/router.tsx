@@ -9,6 +9,8 @@ import ProtectedRoute from './ProtectedRoute'
 import ServiceListPage from '../pages/ServiceListPage'
 import CreateServicePage from '../pages/CreateServicePage'
 import ServiceDetailPage from '../pages/ServiceDetailPage'
+import AppointmentListPage from '../pages/AppointmentListPage'
+import CreateAppointmentPage from '../pages/CreateAppointmentPage'
 
 export const router = createBrowserRouter([
   {
@@ -79,4 +81,21 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/appointments',
+    element: (
+      <ProtectedRoute>
+        <AppointmentListPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+  path: '/appointments/new' ,
+  element: (
+    <ProtectedRoute>
+      <CreateAppointmentPage />
+    </ProtectedRoute>
+  ),
+},
+
 ])

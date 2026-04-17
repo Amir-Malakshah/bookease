@@ -70,6 +70,13 @@ export default function ClientListPage() {
               Services
             </Link>
 
+            <Link
+              to="/appointments"
+              className="rounded-xl border px-4 py-2"
+            >
+               Appointments
+            </Link>
+
             <button
               onClick={handleLogout}
               className="rounded-xl border px-4 py-2"

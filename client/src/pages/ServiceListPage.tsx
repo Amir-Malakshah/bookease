@@ -62,6 +62,21 @@ export default function ServiceListPage() {
             >
               New Service
             </Link>
+
+            <Link
+              to="/clients"
+              className="rounded-xl border px-4 py-2"
+            >
+              Clients
+            </Link>
+
+            <Link
+              to="/appointments"
+              className="rounded-xl border px-4 py-2"
+            >
+               Appointments
+            </Link>
+
             <button
               onClick={handleLogout}
               className="rounded-xl border px-4 py-2"
