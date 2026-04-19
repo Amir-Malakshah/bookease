@@ -22,6 +22,12 @@ app.use(
 
 app.use(express.json())
 
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    message: 'BookEase API is live',
+  })
+})
+
 app.get('/api/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
